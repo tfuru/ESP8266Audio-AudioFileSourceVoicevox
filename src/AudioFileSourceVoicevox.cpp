@@ -1,8 +1,8 @@
 /*
-  AudioFileSourceHTTPStream
-  Streaming HTTP source
-
-  Copyright (C) 2017  Earle F. Philhower, III
+  AudioFileSourceVoicevox
+  Connect to a VOICEVOX service
+  
+  Copyright (C) 2023  t_furu
 
   This program is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
