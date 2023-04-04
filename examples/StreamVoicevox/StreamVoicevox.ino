@@ -46,15 +46,15 @@ void loop()
 {
   static int lastms = 0;
 
-  if (mp3->isRunning()) {
+  if (audioGenerator->isRunning()) {
     if (millis()-lastms > 1000) {
       lastms = millis();
       Serial.printf("Running for %d ms...\n", lastms);
       Serial.flush();
      }
-    if (!mp3->loop()) mp3->stop();
+    if (!audioGenerator->loop()) audioGenerator->stop();
   } else {
-    Serial.printf("MP3 done\n");
+    Serial.printf("done\n");
     delay(1000);
   }
 }
