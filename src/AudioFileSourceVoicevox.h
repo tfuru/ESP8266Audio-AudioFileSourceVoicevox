@@ -32,7 +32,7 @@ class AudioFileSourceVoicevox : public AudioFileSource
 
   public:
     AudioFileSourceVoicevox();
-    AudioFileSourceVoicevox(const char* endpoint, const char * text, int speaker);
+    AudioFileSourceVoicevox(const char* endpoint);
     virtual ~AudioFileSourceVoicevox() override;
     
     virtual bool open(const char *url) override;
@@ -43,9 +43,10 @@ class AudioFileSourceVoicevox : public AudioFileSource
     virtual uint32_t getSize() override;
     virtual uint32_t getPos() override;
     bool SetReconnect(int tries, int delayms) { reconnectTries = tries; reconnectDelayMs = delayms; return true; }
-    void useHTTP10 () { http.useHTTP10(true); }
 
     enum { STATUS_HTTPFAIL=2, STATUS_DISCONNECTED, STATUS_RECONNECTING, STATUS_RECONNECTED, STATUS_NODATA };
+
+    void textToSpeech(const char * text, int speaker);
 
   private:
     void httpInit();
@@ -54,13 +55,12 @@ class AudioFileSourceVoicevox : public AudioFileSource
 
   private:
     virtual uint32_t readInternal(void *data, uint32_t len, bool nonBlock);
-    WiFiClient client;
     HTTPClient http;
+
     int pos;
     int size;
     int reconnectTries;
     int reconnectDelayMs;
-    char saveURL[128];
 
     String endpoint = "";
     String audioQueryStr = "";

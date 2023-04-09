@@ -26,15 +26,17 @@ AudioFileSourceVoicevox::AudioFileSourceVoicevox()
 {
   pos = 0;
   reconnectTries = 0;
-  saveURL[0] = 0;
+  // saveURL[0] = 0;
 }
 
-AudioFileSourceVoicevox::AudioFileSourceVoicevox(const char* endpoint, const char * text, int speaker)
+AudioFileSourceVoicevox::AudioFileSourceVoicevox(const char* endpoint)
 {
-  saveURL[0] = 0;
+  // saveURL[0] = 0;
   reconnectTries = 0;
   this->endpoint = String(endpoint);
+}
 
+void AudioFileSourceVoicevox::textToSpeech(const char * text, int speaker) {
   httpInit();
   int result = postAudioQuery(text, speaker);
   if (result != 0) {
@@ -45,6 +47,7 @@ AudioFileSourceVoicevox::AudioFileSourceVoicevox(const char* endpoint, const cha
 
 void AudioFileSourceVoicevox::httpInit() {
   pos = 0;
+
   http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS); 
   http.setTimeout( 30 * 1000 ); 
   http.setReuse(true);
@@ -89,6 +92,7 @@ uint32_t AudioFileSourceVoicevox::read(void *data, uint32_t len)
 
 uint32_t AudioFileSourceVoicevox::readInternal(void *data, uint32_t len, bool nonBlock)
 {
+  /*
 retry:
   if (!http.connected()) {
     cb.st(STATUS_DISCONNECTED, PSTR("Stream disconnected"));
@@ -109,6 +113,11 @@ retry:
     }
   }
   if ((size > 0) && (pos >= size)) return 0;
+  */
+  if ((size > 0) && (pos >= size)) {
+    http.end();
+    return 0;
+  }
 
   WiFiClient *stream = http.getStreamPtr();
 
@@ -124,7 +133,8 @@ retry:
   if (!nonBlock && !avail) {
     cb.st(STATUS_NODATA, PSTR("No stream data available"));
     http.end();
-    goto retry;
+    return 0;
+    // goto retry;
   }
   if (avail == 0) return 0;
   if (avail < len) len = avail;
@@ -182,7 +192,7 @@ int AudioFileSourceVoicevox::postAudioQuery(const char * text, int speaker) {
 
 int AudioFileSourceVoicevox::postSynthesis(int speaker) {
   String url = String(endpoint) + "/synthesis?speaker=" + String(speaker);
-
+  
   http.begin(url);
   http.addHeader("Content-Type", "application/json");
   int code = http.POST(this->audioQueryStr);
