@@ -26,12 +26,10 @@ AudioFileSourceVoicevox::AudioFileSourceVoicevox()
 {
   pos = 0;
   reconnectTries = 0;
-  // saveURL[0] = 0;
 }
 
 AudioFileSourceVoicevox::AudioFileSourceVoicevox(const char* endpoint)
 {
-  // saveURL[0] = 0;
   reconnectTries = 0;
   this->endpoint = String(endpoint);
 }
@@ -39,10 +37,10 @@ AudioFileSourceVoicevox::AudioFileSourceVoicevox(const char* endpoint)
 void AudioFileSourceVoicevox::textToSpeech(const char * text, int speaker) {
   httpInit();
   int result = postAudioQuery(text, speaker);
-  if (result != 0) {
+  if (result == -1) {
     return;
   }
-  postSynthesis(speaker);
+  result = postSynthesis(speaker);
 }
 
 void AudioFileSourceVoicevox::httpInit() {
@@ -77,7 +75,7 @@ bool AudioFileSourceVoicevox::open(const char *url)
 
 AudioFileSourceVoicevox::~AudioFileSourceVoicevox()
 {
-  http.end();
+  close();
 }
 
 
@@ -115,11 +113,11 @@ retry:
   if ((size > 0) && (pos >= size)) return 0;
   */
   if ((size > 0) && (pos >= size)) {
-    http.end();
+    close();
     return 0;
   }
 
-  WiFiClient *stream = http.getStreamPtr();
+  WiFiClient* stream = http.getStreamPtr();
 
   // Can't read past EOF...
   if ( (size > 0) && (len > (uint32_t)(pos - size)) ) len = pos - size;
@@ -132,7 +130,7 @@ retry:
   size_t avail = stream->available();
   if (!nonBlock && !avail) {
     cb.st(STATUS_NODATA, PSTR("No stream data available"));
-    http.end();
+    close();
     return 0;
     // goto retry;
   }
@@ -154,6 +152,7 @@ bool AudioFileSourceVoicevox::seek(int32_t pos, int dir)
 
 bool AudioFileSourceVoicevox::close()
 {
+  http.getStreamPtr()->flush();
   http.end();
   return true;
 }
@@ -180,13 +179,13 @@ int AudioFileSourceVoicevox::postAudioQuery(const char * text, int speaker) {
   http.begin(url + query);
   int code = http.POST( query );
   if (code != HTTP_CODE_OK) {
-    http.end();
+    close();
     cb.st(STATUS_HTTPFAIL, PSTR("Can't open HTTP request"));
     return -1;
   } 
   audioQueryStr = http.getString();
-
-  http.end();
+  
+  close();
   return 0;
 }
 
@@ -197,10 +196,12 @@ int AudioFileSourceVoicevox::postSynthesis(int speaker) {
   http.addHeader("Content-Type", "application/json");
   int code = http.POST(this->audioQueryStr);
   if (code != HTTP_CODE_OK) {
-    http.end();
+    audioQueryStr = "";
+    close();
     cb.st(STATUS_HTTPFAIL, PSTR("Can't open HTTP request"));
     return -1;
-  }    
+  }
+  audioQueryStr = "";
   size = http.getSize();
   return 0;
 }
